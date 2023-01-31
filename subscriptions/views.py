@@ -17,6 +17,7 @@ def home(request):
         stripe.api_key = settings.STRIPE_SECRET_KEY
         subscription = stripe.Subscription.retrieve(stripe_customer.stripeSubscriptionId)
         product = stripe.Product.retrieve(subscription.plan.product)
+        invoices = stripe.Invoice.list()
 
         # Feel free to fetch any additional data from 'subscription' or 'product'
         # https://stripe.com/docs/api/subscriptions/object
@@ -25,6 +26,7 @@ def home(request):
         return render(request, 'home.html', {
             'subscription': subscription,
             'product': product,
+            'invoices': invoices,
         })
 
     except StripeCustomer.DoesNotExist:
@@ -69,6 +71,16 @@ def success(request):
 
 @login_required
 def cancel(request):
+    return render(request, 'cancel.html')
+
+
+@login_required
+def cancel_subscription(request):
+    stripe_customer = StripeCustomer.objects.get(user=request.user)
+    stripe.api_key = settings.STRIPE_SECRET_KEY
+    subscription = stripe.Subscription.retrieve(stripe_customer.stripeSubscriptionId)
+    subscription.cancel_at_period_end = True
+    subscription.save()
     return render(request, 'cancel.html')
 
 
